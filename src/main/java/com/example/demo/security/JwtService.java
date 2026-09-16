@@ -28,24 +28,37 @@ public class JwtService {
         this.expiration = expiration;
     }
 
-    public String generateToken(String email) {
+    // Generate JWT Token with email and role
+    public String generateToken(String email, String role) {
 
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
 
         return Jwts.builder()
                 .subject(email)
+                .claim("role", role)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(secretKey)
                 .compact();
     }
 
+    // Extract email from JWT
     public String extractEmail(String token) {
 
         return extractClaim(token, Claims::getSubject);
     }
 
+    // Extract role from JWT
+    public String extractRole(String token) {
+
+        return extractClaim(
+                token,
+                claims -> claims.get("role", String.class)
+        );
+    }
+
+    // Generic claim extractor
     public <T> T extractClaim(
             String token,
             Function<Claims, T> claimsResolver) {
@@ -55,6 +68,7 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
+    // Extract all claims
     private Claims extractAllClaims(String token) {
 
         return Jwts.parser()
@@ -64,6 +78,7 @@ public class JwtService {
                 .getPayload();
     }
 
+    // Validate JWT
     public boolean isTokenValid(String token) {
 
         try {
