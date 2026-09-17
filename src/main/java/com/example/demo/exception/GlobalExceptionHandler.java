@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
+import org.springframework.http.HttpStatus;
 import java.util.Map;
 
 @RestControllerAdvice
@@ -37,6 +37,19 @@ public class GlobalExceptionHandler {
 
         Map<String, Object> response = Map.of(
                 "message", message,
+                "status", HttpStatus.BAD_REQUEST.value()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(response);
+    }
+    @ExceptionHandler(PasswordMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handlePasswordMismatch(
+            PasswordMismatchException ex) {
+
+        Map<String, Object> response = Map.of(
+                "message", ex.getMessage(),
                 "status", HttpStatus.BAD_REQUEST.value()
         );
 

@@ -1,6 +1,11 @@
 package com.example.demo.service;
 
+import com.example.demo.dto.UpdateProfileRequest;
 import com.example.demo.entity.User;
+import com.example.demo.dto.ChangePasswordRequest;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import com.example.demo.exception.PasswordMismatchException;
+
 import com.example.demo.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import com.example.demo.exception.ResourceNotFoundException;
@@ -11,8 +16,14 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    public UserService(UserRepository userRepository) {
+    private final PasswordEncoder passwordEncoder;
+
+    public UserService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder) {
+
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public User createUser(User user) {
@@ -50,5 +61,53 @@ public class UserService {
                                 "User not found with id: " + id
                         ));
         userRepository.delete(existingUser);
+    }
+    public User getUserByEmail(String email) {
+
+        return userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with email: " + email
+                        ));
+    }
+    public User updateMyProfile(
+            String email,
+            UpdateProfileRequest request) {
+
+        User existingUser = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with email: " + email
+                        ));
+
+        existingUser.setName(request.getName());
+        existingUser.setEmail(request.getEmail());
+
+        return userRepository.save(existingUser);
+    }
+    public void changePassword(
+            String email,
+            ChangePasswordRequest request) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with email: " + email
+                        ));
+
+        if (!passwordEncoder.matches(
+                request.getCurrentPassword(),
+                user.getPassword())) {
+
+            throw new PasswordMismatchException(
+                    "Current password is incorrect"
+            );
+        }
+
+        user.setPassword(
+                passwordEncoder.encode(request.getNewPassword())
+        );
+
+        userRepository.save(user);
     }
 }
