@@ -33,7 +33,8 @@ public class AuthController {
         UserResponse response = new UserResponse(
                 user.getId(),
                 user.getName(),
-                user.getEmail()
+                user.getEmail(),
+                user.getRole().name()
         );
 
         return ResponseEntity
