@@ -1,4 +1,5 @@
 package com.example.demo.controller;
+import com.example.demo.entity.Permission;
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.example.demo.dto.UserResponse;
 import com.example.demo.entity.User;
@@ -8,8 +9,11 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import com.example.demo.dto.ChangePasswordRequest;
 import java.util.List;
+import java.util.Set;
+
 import org.springframework.security.core.Authentication;
 import com.example.demo.dto.UpdateProfileRequest;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/users")
@@ -112,5 +116,33 @@ public class UserController {
         userService.changePassword(email, request);
 
         return ResponseEntity.ok("Password changed successfully");
+    }
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{userId}/permissions/{permissionId}")
+    public ResponseEntity<UserResponse> assignPermission(
+            @PathVariable Long userId,
+            @PathVariable Long permissionId) {
+
+        User user = userService.assignPermission(
+                userId,
+                permissionId
+        );
+
+        UserResponse response = new UserResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getRole().name()
+        );
+
+        return ResponseEntity.ok(response);
+    }
+    @GetMapping("/{userId}/permissions")
+    public ResponseEntity<Set<Permission>> getUserPermissions(
+            @PathVariable Long userId) {
+
+        return ResponseEntity.ok(
+                userService.getUserPermissions(userId)
+        );
     }
 }

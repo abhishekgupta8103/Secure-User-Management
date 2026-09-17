@@ -10,20 +10,27 @@ import com.example.demo.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import com.example.demo.exception.ResourceNotFoundException;
 import java.util.List;
+import com.example.demo.entity.Permission;
+import com.example.demo.repository.PermissionRepository;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Service
 public class UserService {
+    private final PermissionRepository permissionRepository;
 
     private final UserRepository userRepository;
 
     private final PasswordEncoder passwordEncoder;
-
     public UserService(
             UserRepository userRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            PermissionRepository permissionRepository) {
 
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.permissionRepository = permissionRepository;
     }
 
     public User createUser(User user) {
@@ -109,5 +116,38 @@ public class UserService {
         );
 
         userRepository.save(user);
+    }
+    public User assignPermission(
+            Long userId,
+            Long permissionId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with id: " + userId
+                        ));
+
+        Permission permission = permissionRepository.findById(permissionId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Permission not found with id: " + permissionId
+                        ));
+
+        if (user.getPermissions() == null) {
+            user.setPermissions(new HashSet<>());
+        }
+
+        user.getPermissions().add(permission);
+
+        return userRepository.save(user);
+    }
+    public Set<Permission> getUserPermissions(Long userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with id: " + userId));
+
+        return user.getPermissions();
     }
 }

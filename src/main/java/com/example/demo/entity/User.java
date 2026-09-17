@@ -1,9 +1,11 @@
 package com.example.demo.entity;
-
+import java.util.Set;
 import jakarta.persistence.*;
 import lombok.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import java.util.List;
+
 @Entity
 @Table(name = "users")
 @Getter
@@ -33,4 +35,14 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Appointment> appointments;
+    @ManyToMany
+    @JoinTable(
+            name = "user_permissions",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "permission_id")
+    )
+    private Set<Permission> permissions;
 }
