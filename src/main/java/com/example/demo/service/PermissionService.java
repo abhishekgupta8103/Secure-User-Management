@@ -16,17 +16,15 @@ public class PermissionService {
         this.permissionRepository = permissionRepository;
     }
 
-    // CREATE PERMISSION
     public Permission createPermission(Permission permission) {
         return permissionRepository.save(permission);
     }
 
-    // GET ALL PERMISSIONS
+
     public List<Permission> getAllPermissions() {
         return permissionRepository.findAll();
     }
 
-    // GET PERMISSION BY NAME
     public Permission getPermissionByName(String name) {
 
         return permissionRepository.findByName(name)

@@ -23,7 +23,6 @@ public class AppointmentService {
         this.userRepository = userRepository;
     }
 
-    // CREATE APPOINTMENT
     public Appointment createAppointment(
             Long userId,
             Appointment appointment) {
@@ -39,7 +38,6 @@ public class AppointmentService {
         return appointmentRepository.save(appointment);
     }
 
-    // GET USER APPOINTMENTS
     public List<Appointment> getUserAppointments(Long userId) {
 
         if (!userRepository.existsById(userId)) {

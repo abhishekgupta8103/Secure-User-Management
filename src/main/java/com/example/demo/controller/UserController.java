@@ -35,9 +35,6 @@ public class UserController {
         this.userMapper = userMapper;
     }
 
-    // =========================
-    // GET USER BY ID
-    // =========================
 
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/{id}")
@@ -51,10 +48,6 @@ public class UserController {
         );
     }
 
-    // =========================
-    // UPDATE USER
-    // =========================
-
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(
             @PathVariable Long id,
@@ -67,10 +60,6 @@ public class UserController {
         );
     }
 
-    // =========================
-    // DELETE USER
-    // =========================
-
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteUser(
             @PathVariable Long id) {
@@ -81,10 +70,6 @@ public class UserController {
                 "User deleted successfully"
         );
     }
-
-    // =========================
-    // MY PROFILE
-    // =========================
 
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/profile")
@@ -99,10 +84,6 @@ public class UserController {
                 userMapper.toUserResponse(user)
         );
     }
-
-    // =========================
-    // UPDATE MY PROFILE
-    // =========================
 
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @PutMapping("/profile")
@@ -122,9 +103,6 @@ public class UserController {
         );
     }
 
-    // =========================
-    // CHANGE PASSWORD
-    // =========================
 
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @PutMapping("/change-password")
@@ -144,10 +122,6 @@ public class UserController {
         );
     }
 
-    // =========================
-    // ASSIGN PERMISSION
-    // =========================
-
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{userId}/permissions/{permissionId}")
     public ResponseEntity<UserResponse> assignPermission(
@@ -163,10 +137,6 @@ public class UserController {
                 userMapper.toUserResponse(user)
         );
     }
-
-    // =========================
-    // GET USER PERMISSIONS
-    // =========================
 
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/{userId}/permissions")

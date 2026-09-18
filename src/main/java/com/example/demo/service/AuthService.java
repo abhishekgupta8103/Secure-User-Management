@@ -39,7 +39,6 @@ public class AuthService {
                 passwordEncoder.encode(request.getPassword())
         );
 
-        // Default role
         user.setRole(Role.USER);
 
         return userRepository.save(user);
