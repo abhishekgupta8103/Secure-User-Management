@@ -15,6 +15,8 @@ import com.example.demo.repository.PermissionRepository;
 
 import java.util.HashSet;
 import java.util.Set;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 public class UserService {
@@ -39,6 +41,20 @@ public class UserService {
 
     public List<User> getAllUsers() {
         return userRepository.findAll();
+    }
+    public Page<User> getUsersWithPagination(Pageable pageable) {
+        return userRepository.findAll(pageable);
+    }
+    public Page<User> searchUsers(
+            String search,
+            Pageable pageable) {
+
+        return userRepository
+                .findByNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
+                        search,
+                        search,
+                        pageable
+                );
     }
 
     public User getUserById(Long id) {

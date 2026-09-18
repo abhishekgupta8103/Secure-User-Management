@@ -11,6 +11,10 @@ import com.example.demo.service.UserService;
 
 import jakarta.validation.Valid;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -35,7 +39,42 @@ public class UserController {
         this.userMapper = userMapper;
     }
 
+    @GetMapping("/page")
+    public ResponseEntity<Page<UserResponse>> getUsersWithPagination(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction,
+            @RequestParam(defaultValue = "") String search) {
+        if (page < 0) {
+            page = 0;
+        }
 
+        if (size <= 0) {
+            size = 5;
+        }
+
+
+        Sort sort = direction.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<UserResponse> response;
+
+        if (search.isBlank()) {
+            response = userService
+                    .getUsersWithPagination(pageable)
+                    .map(userMapper::toUserResponse);
+        } else {
+            response = userService
+                    .searchUsers(search, pageable)
+                    .map(userMapper::toUserResponse);
+        }
+
+        return ResponseEntity.ok(response);
+    }
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUserById(
