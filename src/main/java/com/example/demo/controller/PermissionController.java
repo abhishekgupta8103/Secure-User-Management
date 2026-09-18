@@ -1,6 +1,8 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.PermissionResponse;
 import com.example.demo.entity.Permission;
+import com.example.demo.mapper.PermissionMapper;
 import com.example.demo.service.PermissionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,24 +14,37 @@ import java.util.List;
 public class PermissionController {
 
     private final PermissionService permissionService;
+    private final PermissionMapper permissionMapper;
 
-    public PermissionController(PermissionService permissionService) {
+    public PermissionController(
+            PermissionService permissionService,
+            PermissionMapper permissionMapper) {
+
         this.permissionService = permissionService;
+        this.permissionMapper = permissionMapper;
     }
 
     @PostMapping
-    public ResponseEntity<Permission> createPermission(
+    public ResponseEntity<PermissionResponse> createPermission(
             @RequestBody Permission permission) {
 
-        return ResponseEntity.ok(
-                permissionService.createPermission(permission)
-        );
-    }
-    @GetMapping
-    public ResponseEntity<List<Permission>> getAllPermissions() {
+        Permission savedPermission =
+                permissionService.createPermission(permission);
 
         return ResponseEntity.ok(
-                permissionService.getAllPermissions()
+                permissionMapper.toPermissionResponse(savedPermission)
         );
+    }
+
+    @GetMapping
+    public ResponseEntity<List<PermissionResponse>> getAllPermissions() {
+
+        List<PermissionResponse> response =
+                permissionService.getAllPermissions()
+                        .stream()
+                        .map(permissionMapper::toPermissionResponse)
+                        .toList();
+
+        return ResponseEntity.ok(response);
     }
 }

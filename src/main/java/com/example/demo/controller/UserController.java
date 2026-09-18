@@ -1,47 +1,59 @@
 package com.example.demo.controller;
-import com.example.demo.entity.Permission;
-import org.springframework.security.access.prepost.PreAuthorize;
-import com.example.demo.dto.UserResponse;
-import com.example.demo.entity.User;
-import com.example.demo.service.UserService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import jakarta.validation.Valid;
-import com.example.demo.dto.ChangePasswordRequest;
-import java.util.List;
-import java.util.Set;
 
-import org.springframework.security.core.Authentication;
+import com.example.demo.dto.ChangePasswordRequest;
+import com.example.demo.dto.PermissionResponse;
 import com.example.demo.dto.UpdateProfileRequest;
+import com.example.demo.dto.UserResponse;
+import com.example.demo.entity.Permission;
+import com.example.demo.entity.User;
+import com.example.demo.mapper.UserMapper;
+import com.example.demo.service.UserService;
+
+import jakarta.validation.Valid;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
 @PreAuthorize("hasRole('ADMIN')")
-
 public class UserController {
 
     private final UserService userService;
+    private final UserMapper userMapper;
 
-    public UserController(UserService userService) {
+    public UserController(
+            UserService userService,
+            UserMapper userMapper) {
+
         this.userService = userService;
+        this.userMapper = userMapper;
     }
+
+    // =========================
+    // GET USER BY ID
+    // =========================
 
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
+    public ResponseEntity<UserResponse> getUserById(
+            @PathVariable Long id) {
 
         User user = userService.getUserById(id);
 
-        UserResponse response = new UserResponse(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getRole().name()
+        return ResponseEntity.ok(
+                userMapper.toUserResponse(user)
         );
-
-        return ResponseEntity.ok(response);
     }
+
+    // =========================
+    // UPDATE USER
+    // =========================
 
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(
@@ -50,23 +62,29 @@ public class UserController {
 
         User user = userService.updateUser(id, updatedUser);
 
-        UserResponse response = new UserResponse(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getRole().name()
+        return ResponseEntity.ok(
+                userMapper.toUserResponse(user)
         );
-
-        return ResponseEntity.ok(response);
     }
 
+    // =========================
+    // DELETE USER
+    // =========================
+
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<String> deleteUser(
+            @PathVariable Long id) {
 
         userService.deleteUser(id);
 
-        return ResponseEntity.ok("User deleted successfully");
+        return ResponseEntity.ok(
+                "User deleted successfully"
+        );
     }
+
+    // =========================
+    // MY PROFILE
+    // =========================
 
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/profile")
@@ -77,15 +95,15 @@ public class UserController {
 
         User user = userService.getUserByEmail(email);
 
-        UserResponse response = new UserResponse(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getRole().name()
+        return ResponseEntity.ok(
+                userMapper.toUserResponse(user)
         );
-
-        return ResponseEntity.ok(response);
     }
+
+    // =========================
+    // UPDATE MY PROFILE
+    // =========================
+
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @PutMapping("/profile")
     public ResponseEntity<UserResponse> updateMyProfile(
@@ -94,17 +112,20 @@ public class UserController {
 
         String email = authentication.getName();
 
-        User user = userService.updateMyProfile(email, request);
-
-        UserResponse response = new UserResponse(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getRole().name()
+        User user = userService.updateMyProfile(
+                email,
+                request
         );
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                userMapper.toUserResponse(user)
+        );
     }
+
+    // =========================
+    // CHANGE PASSWORD
+    // =========================
+
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @PutMapping("/change-password")
     public ResponseEntity<String> changePassword(
@@ -113,10 +134,20 @@ public class UserController {
 
         String email = authentication.getName();
 
-        userService.changePassword(email, request);
+        userService.changePassword(
+                email,
+                request
+        );
 
-        return ResponseEntity.ok("Password changed successfully");
+        return ResponseEntity.ok(
+                "Password changed successfully"
+        );
     }
+
+    // =========================
+    // ASSIGN PERMISSION
+    // =========================
+
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{userId}/permissions/{permissionId}")
     public ResponseEntity<UserResponse> assignPermission(
@@ -128,21 +159,29 @@ public class UserController {
                 permissionId
         );
 
-        UserResponse response = new UserResponse(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getRole().name()
+        return ResponseEntity.ok(
+                userMapper.toUserResponse(user)
         );
-
-        return ResponseEntity.ok(response);
     }
+
+    // =========================
+    // GET USER PERMISSIONS
+    // =========================
+
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/{userId}/permissions")
-    public ResponseEntity<Set<Permission>> getUserPermissions(
+    public ResponseEntity<Set<PermissionResponse>> getUserPermissions(
             @PathVariable Long userId) {
 
-        return ResponseEntity.ok(
+        Set<PermissionResponse> response =
                 userService.getUserPermissions(userId)
-        );
+                        .stream()
+                        .map(permission -> new PermissionResponse(
+                                permission.getId(),
+                                permission.getName()
+                        ))
+                        .collect(Collectors.toSet());
+
+        return ResponseEntity.ok(response);
     }
 }
