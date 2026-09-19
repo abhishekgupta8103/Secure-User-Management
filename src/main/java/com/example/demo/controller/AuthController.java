@@ -34,9 +34,9 @@ public class AuthController {
                 user.getId(),
                 user.getName(),
                 user.getEmail(),
-                user.getRole().name()
+                user.getRole().name(),
+                user.getProfileImage()
         );
-
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);

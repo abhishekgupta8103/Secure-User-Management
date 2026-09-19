@@ -2,12 +2,12 @@ package com.example.demo.mapper;
 
 import com.example.demo.dto.UserResponse;
 import com.example.demo.entity.User;
-import org.mapstruct.Mapper;
+import org.springframework.stereotype.Component;
 
-@Mapper(componentModel = "spring")
-public interface UserMapper {
+@Component
+public class UserResponseMapper {
 
-    default UserResponse toUserResponse(User user) {
+    public UserResponse toResponse(User user) {
 
         if (user == null) {
             return null;

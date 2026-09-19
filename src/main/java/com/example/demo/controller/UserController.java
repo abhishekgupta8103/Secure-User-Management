@@ -19,9 +19,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.web.multipart.MultipartFile;
 import java.util.Set;
 import java.util.stream.Collectors;
+import com.example.demo.mapper.UserResponseMapper;
 
 @RestController
 @RequestMapping("/api/users")
@@ -30,13 +31,16 @@ public class UserController {
 
     private final UserService userService;
     private final UserMapper userMapper;
+    private final UserResponseMapper userResponseMapper;
 
     public UserController(
             UserService userService,
-            UserMapper userMapper) {
+            UserMapper userMapper,
+            UserResponseMapper userResponseMapper) {
 
         this.userService = userService;
         this.userMapper = userMapper;
+        this.userResponseMapper = userResponseMapper;
     }
 
     @GetMapping("/page")
@@ -109,7 +113,6 @@ public class UserController {
                 "User deleted successfully"
         );
     }
-
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/profile")
     public ResponseEntity<UserResponse> getMyProfile(
@@ -120,7 +123,7 @@ public class UserController {
         User user = userService.getUserByEmail(email);
 
         return ResponseEntity.ok(
-                userMapper.toUserResponse(user)
+                userResponseMapper.toResponse(user)
         );
     }
 
@@ -141,7 +144,6 @@ public class UserController {
                 userMapper.toUserResponse(user)
         );
     }
-
 
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @PutMapping("/change-password")
@@ -192,5 +194,22 @@ public class UserController {
                         .collect(Collectors.toSet());
 
         return ResponseEntity.ok(response);
+    }
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PostMapping("/profile-image")
+    public ResponseEntity<UserResponse> uploadProfileImage(
+            Authentication authentication,
+            @RequestParam("file") MultipartFile file) {
+
+        String email = authentication.getName();
+
+        User user = userService.uploadProfileImage(
+                email,
+                file
+        );
+
+        return ResponseEntity.ok(
+                userMapper.toUserResponse(user)
+        );
     }
 }

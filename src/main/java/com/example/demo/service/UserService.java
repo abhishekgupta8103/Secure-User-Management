@@ -17,10 +17,12 @@ import java.util.HashSet;
 import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class UserService {
     private final PermissionRepository permissionRepository;
+    private final FileStorageService fileStorageService;
 
     private final UserRepository userRepository;
 
@@ -28,11 +30,13 @@ public class UserService {
     public UserService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            PermissionRepository permissionRepository) {
+            PermissionRepository permissionRepository,
+            FileStorageService fileStorageService) {
 
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.permissionRepository = permissionRepository;
+        this.fileStorageService = fileStorageService;
     }
 
     public User createUser(User user) {
@@ -87,11 +91,15 @@ public class UserService {
     }
     public User getUserByEmail(String email) {
 
-        return userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "User not found with email: " + email
                         ));
+
+        System.out.println("PROFILE IMAGE = " + user.getProfileImage());
+
+        return user;
     }
     public User updateMyProfile(
             String email,
@@ -165,5 +173,21 @@ public class UserService {
                                 "User not found with id: " + userId));
 
         return user.getPermissions();
+    }
+    public User uploadProfileImage(
+            String email,
+            MultipartFile file) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with email: " + email
+                        ));
+
+        String filePath = fileStorageService.saveFile(file);
+
+        user.setProfileImage(filePath);
+
+        return userRepository.save(user);
     }
 }

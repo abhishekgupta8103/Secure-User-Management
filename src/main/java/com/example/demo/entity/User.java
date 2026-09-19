@@ -27,6 +27,7 @@ public class User {
     @NotBlank(message = "Email is required")
     @Column(unique = true, nullable = false)
     private String email;
+    private String profileImage;
 
     @NotBlank(message = "Password is required")
     @Column(nullable = false)

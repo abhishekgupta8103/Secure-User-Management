@@ -6,15 +6,28 @@ public class UserResponse {
     private String name;
     private String email;
     private String role;
-
+    private String profileImage;
     public UserResponse() {
     }
+    public UserResponse(
+            Long id,
+            String name,
+            String email,
+            String role,
+            String profileImage) {
 
-    public UserResponse(Long id, String name, String email, String role) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.role = role;
+        this.profileImage = profileImage;
+    }
+    public String getProfileImage() {
+        return profileImage;
+    }
+
+    public void setProfileImage(String profileImage) {
+        this.profileImage = profileImage;
     }
 
     public Long getId() {
