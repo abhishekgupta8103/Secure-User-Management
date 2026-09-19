@@ -1,8 +1,6 @@
 package com.example.demo.controller;
 
-import com.example.demo.dto.LoginRequest;
-import com.example.demo.dto.RegisterRequest;
-import com.example.demo.dto.UserResponse;
+import com.example.demo.dto.*;
 import com.example.demo.entity.User;
 import com.example.demo.service.AuthService;
 
@@ -37,6 +35,7 @@ public class AuthController {
                 user.getRole().name(),
                 user.getProfileImage()
         );
+
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
@@ -50,6 +49,41 @@ public class AuthController {
 
         return ResponseEntity.ok(
                 Map.of("token", token)
+        );
+    }
+
+    @GetMapping("/verify")
+    public ResponseEntity<String> verifyEmail(
+            @RequestParam String token) {
+
+        authService.verifyEmail(token);
+
+        return ResponseEntity.ok(
+                "Email verified successfully"
+        );
+    }
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+
+        authService.forgotPassword(request.getEmail());
+
+        return ResponseEntity.ok(
+                "Password reset email sent successfully"
+        );
+    }
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(
+            @RequestParam String token,
+            @Valid @RequestBody ResetPasswordRequest request) {
+
+        authService.resetPassword(
+                token,
+                request.getNewPassword()
+        );
+
+        return ResponseEntity.ok(
+                "Password reset successfully"
         );
     }
 }

@@ -29,6 +29,13 @@ public class User {
     private String email;
     private String profileImage;
 
+    private boolean emailVerified = false;
+
+    private String verificationToken;
+    private String resetPasswordToken;
+
+    private java.time.LocalDateTime resetPasswordTokenExpiry;
+
     @NotBlank(message = "Password is required")
     @Column(nullable = false)
     private String password;

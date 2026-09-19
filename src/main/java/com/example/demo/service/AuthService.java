@@ -8,22 +8,29 @@ import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.example.demo.service.EmailService;
+import com.example.demo.exception.EmailNotVerifiedException;
+
+import java.util.UUID;
 
 @Service
 public class AuthService {
-
+    private final EmailService emailService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    public AuthService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder,
-                       JwtService jwtService) {
+    public AuthService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService,
+            EmailService emailService) {
+
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.emailService = emailService;
     }
-
     public User register(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -41,7 +48,30 @@ public class AuthService {
 
         user.setRole(Role.USER);
 
-        return userRepository.save(user);
+        String verificationToken = UUID.randomUUID().toString();
+
+        user.setVerificationToken(verificationToken);
+        user.setEmailVerified(false);
+
+        // Save user first
+        User savedUser = userRepository.save(user);
+
+        // Create verification link
+        String verificationLink =
+                "http://localhost:8080/api/auth/verify?token="
+                        + savedUser.getVerificationToken();
+
+        // Send verification email
+        emailService.sendEmail(
+                savedUser.getEmail(),
+                "Verify Your Email",
+                "Hello " + savedUser.getName() + ",\n\n"
+                        + "Please verify your email by clicking this link:\n"
+                        + verificationLink
+                        + "\n\nThank you!"
+        );
+
+        return savedUser;
     }
 
     public String login(LoginRequest request) {
@@ -59,8 +89,84 @@ public class AuthService {
             throw new RuntimeException("Invalid email or password");
         }
 
+        if (!user.isEmailVerified()) {
+            throw new EmailNotVerifiedException(
+                    "Please verify your email before login"
+            );
+        }
+
         return jwtService.generateToken(
                 user.getEmail(),
                 user.getRole().name()
-        );    }
+        );
+    }
+    public void verifyEmail(String token) {
+
+        User user = userRepository.findByVerificationToken(token)
+                .orElseThrow(() ->
+                        new RuntimeException("Invalid verification token"));
+
+        user.setEmailVerified(true);
+        user.setVerificationToken(null);
+
+        userRepository.save(user);
+    }
+    public void forgotPassword(String email) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+
+        String resetToken = UUID.randomUUID().toString();
+
+        user.setResetPasswordToken(resetToken);
+        user.setResetPasswordTokenExpiry(
+                java.time.LocalDateTime.now().plusMinutes(15)
+        );
+
+        userRepository.save(user);
+
+        String resetLink =
+                "http://localhost:8080/api/auth/reset-password?token="
+                        + resetToken;
+
+        emailService.sendEmail(
+                user.getEmail(),
+                "Reset Your Password",
+                "Hello " + user.getName() + ",\n\n"
+                        + "Click the following link to reset your password:\n"
+                        + resetLink
+                        + "\n\n"
+                        + "This link will expire in 15 minutes."
+        );
+    }
+    public void resetPassword(
+            String token,
+            String newPassword) {
+
+        User user = userRepository
+                .findByResetPasswordToken(token)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Invalid or expired reset token"
+                        ));
+
+        if (user.getResetPasswordTokenExpiry() == null ||
+                user.getResetPasswordTokenExpiry()
+                        .isBefore(java.time.LocalDateTime.now())) {
+
+            throw new RuntimeException(
+                    "Reset token has expired"
+            );
+        }
+
+        user.setPassword(
+                passwordEncoder.encode(newPassword)
+        );
+
+        user.setResetPasswordToken(null);
+        user.setResetPasswordTokenExpiry(null);
+
+        userRepository.save(user);
+    }
 }
