@@ -80,11 +80,13 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request) {
 
+        ex.printStackTrace();
+
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Internal Server Error",
-                "Something went wrong",
+                ex.getMessage(),
                 request.getRequestURI()
         );
 

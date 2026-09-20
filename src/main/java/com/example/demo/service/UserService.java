@@ -77,6 +77,10 @@ public class UserService {
                         new ResourceNotFoundException(
                                 "User not found with id: " + id
                         ));
+
+        existingUser.setName(updatedUser.getName());
+        existingUser.setEmail(updatedUser.getEmail());
+
         return userRepository.save(existingUser);
     }
 
