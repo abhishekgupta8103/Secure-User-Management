@@ -1,40 +1,48 @@
 package com.example.demo.service;
 
-import com.example.demo.dto.UpdateProfileRequest;
-import com.example.demo.entity.User;
 import com.example.demo.dto.ChangePasswordRequest;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import com.example.demo.exception.PasswordMismatchException;
-
-import com.example.demo.repository.UserRepository;
-import org.springframework.stereotype.Service;
-import com.example.demo.exception.ResourceNotFoundException;
-import java.util.List;
+import com.example.demo.dto.UpdateProfileRequest;
+import com.example.demo.dto.UserFilterRequest;
+import com.example.demo.dto.UserResponse;
 import com.example.demo.entity.Permission;
+import com.example.demo.entity.User;
+import com.example.demo.exception.PasswordMismatchException;
+import com.example.demo.exception.ResourceNotFoundException;
+import com.example.demo.mapper.UserResponseMapper;
 import com.example.demo.repository.PermissionRepository;
+import com.example.demo.repository.UserRepository;
+import com.example.demo.specification.UserSpecification;
 
-import java.util.HashSet;
-import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Service
 public class UserService {
+
     private final PermissionRepository permissionRepository;
     private final FileStorageService fileStorageService;
-
     private final UserRepository userRepository;
-
+    private final UserResponseMapper userResponseMapper;
     private final PasswordEncoder passwordEncoder;
+
     public UserService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
+            UserResponseMapper userResponseMapper,
             PermissionRepository permissionRepository,
             FileStorageService fileStorageService) {
 
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.userResponseMapper = userResponseMapper;
         this.permissionRepository = permissionRepository;
         this.fileStorageService = fileStorageService;
     }
@@ -46,9 +54,11 @@ public class UserService {
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
+
     public Page<User> getUsersWithPagination(Pageable pageable) {
         return userRepository.findAll(pageable);
     }
+
     public Page<User> searchUsers(
             String search,
             Pageable pageable) {
@@ -70,7 +80,10 @@ public class UserService {
                         ));
     }
 
-    public User updateUser(Long id, User updatedUser) {
+
+    public User updateUser(
+            Long id,
+            User updatedUser) {
 
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() ->
@@ -91,8 +104,11 @@ public class UserService {
                         new ResourceNotFoundException(
                                 "User not found with id: " + id
                         ));
+
         userRepository.delete(existingUser);
     }
+
+
     public User getUserByEmail(String email) {
 
         User user = userRepository.findByEmail(email)
@@ -101,10 +117,9 @@ public class UserService {
                                 "User not found with email: " + email
                         ));
 
-        System.out.println("PROFILE IMAGE = " + user.getProfileImage());
-
         return user;
     }
+
     public User updateMyProfile(
             String email,
             UpdateProfileRequest request) {
@@ -120,6 +135,8 @@ public class UserService {
 
         return userRepository.save(existingUser);
     }
+
+
     public void changePassword(
             String email,
             ChangePasswordRequest request) {
@@ -140,11 +157,15 @@ public class UserService {
         }
 
         user.setPassword(
-                passwordEncoder.encode(request.getNewPassword())
+                passwordEncoder.encode(
+                        request.getNewPassword()
+                )
         );
 
         userRepository.save(user);
     }
+
+
     public User assignPermission(
             Long userId,
             Long permissionId) {
@@ -169,15 +190,19 @@ public class UserService {
 
         return userRepository.save(user);
     }
+
+
     public Set<Permission> getUserPermissions(Long userId) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "User not found with id: " + userId));
+                                "User not found with id: " + userId
+                        ));
 
         return user.getPermissions();
     }
+
     public User uploadProfileImage(
             String email,
             MultipartFile file) {
@@ -193,5 +218,36 @@ public class UserService {
         user.setProfileImage(filePath);
 
         return userRepository.save(user);
+    }
+
+    public Page<UserResponse> filterUsers(
+            UserFilterRequest request,
+            Pageable pageable) {
+
+        Specification<User> specification = Specification
+                .where(
+                        UserSpecification.hasName(
+                                request.getName()
+                        )
+                )
+                .and(
+                        UserSpecification.hasEmail(
+                                request.getEmail()
+                        )
+                )
+                .and(
+                        UserSpecification.hasRole(
+                                request.getRole()
+                        )
+                )
+                .and(
+                        UserSpecification.isEmailVerified(
+                                request.getEmailVerified()
+                        )
+                );
+
+        return userRepository
+                .findAll(specification, pageable)
+                .map(userResponseMapper::toResponse);
     }
 }

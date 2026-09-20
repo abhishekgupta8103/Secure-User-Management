@@ -1,9 +1,6 @@
 package com.example.demo.controller;
 
-import com.example.demo.dto.ChangePasswordRequest;
-import com.example.demo.dto.PermissionResponse;
-import com.example.demo.dto.UpdateProfileRequest;
-import com.example.demo.dto.UserResponse;
+import com.example.demo.dto.*;
 import com.example.demo.entity.Permission;
 import com.example.demo.entity.User;
 import com.example.demo.mapper.UserMapper;
@@ -210,6 +207,16 @@ public class UserController {
 
         return ResponseEntity.ok(
                 userMapper.toUserResponse(user)
+        );
+    }
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/filter")
+    public ResponseEntity<Page<UserResponse>> filterUsers(
+            @RequestBody UserFilterRequest request,
+            Pageable pageable) {
+
+        return ResponseEntity.ok(
+                userService.filterUsers(request, pageable)
         );
     }
 }
