@@ -21,7 +21,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
+import org.springframework.cache.annotation.CacheEvict;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -49,7 +49,7 @@ public class UserService {
         this.fileStorageService = fileStorageService;
     }
 
-
+    @CacheEvict(value = "dashboardStats", allEntries = true)
     public User createUser(User user) {
         return userRepository.save(user);
     }
@@ -84,7 +84,7 @@ public class UserService {
                         ));
     }
 
-
+    @CacheEvict(value = "dashboardStats", allEntries = true)
     public User updateUser(
             Long id,
             User updatedUser) {
@@ -100,30 +100,7 @@ public class UserService {
 
         return userRepository.save(existingUser);
     }
-
-
-    public void deleteUser(Long id) {
-
-        User existingUser = userRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "User not found with id: " + id
-                        ));
-
-        userRepository.delete(existingUser);
-    }
-
-
-    public User getUserByEmail(String email) {
-
-        return userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "User not found with email: " + email
-                        ));
-    }
-
-
+    @CacheEvict(value = "dashboardStats", allEntries = true)
     public User updateMyProfile(
             String email,
             UpdateProfileRequest request) {
@@ -140,6 +117,27 @@ public class UserService {
         return userRepository.save(existingUser);
     }
 
+
+    @CacheEvict(value = "dashboardStats", allEntries = true)
+    public void deleteUser(Long id) {
+
+        User existingUser = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with id: " + id
+                        ));
+
+        userRepository.delete(existingUser);
+    }
+
+    public User getUserByEmail(String email) {
+
+        return userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found with email: " + email
+                        ));
+    }
 
     public void changePassword(
             String email,
@@ -207,7 +205,7 @@ public class UserService {
 
         return user.getPermissions();
     }
-
+    @CacheEvict(value = "dashboardStats", allEntries = true)
     public User uploadProfileImage(
             String email,
             MultipartFile file) {

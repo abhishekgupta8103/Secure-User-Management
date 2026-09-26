@@ -1,9 +1,11 @@
+
 package com.example.demo.service;
 
 import com.example.demo.dto.DashboardResponse;
 import com.example.demo.entity.Role;
 import com.example.demo.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.Cacheable;
 
 @Service
 public class DashboardService {
@@ -14,6 +16,7 @@ public class DashboardService {
         this.userRepository = userRepository;
     }
 
+    @Cacheable(value = "dashboardStats")
     public DashboardResponse getDashboardStats() {
 
         long totalUsers = userRepository.count();
