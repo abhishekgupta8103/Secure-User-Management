@@ -10,11 +10,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.example.demo.service.EmailService;
 import com.example.demo.exception.EmailNotVerifiedException;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.UUID;
 
 @Service
 public class AuthService {
+    private static final Logger logger =
+            LoggerFactory.getLogger(AuthService.class);
     private final EmailService emailService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -32,8 +35,9 @@ public class AuthService {
         this.emailService = emailService;
     }
     public User register(RegisterRequest request) {
-
+        logger.info("User registration initiated");
         if (userRepository.existsByEmail(request.getEmail())) {
+            logger.warn("Registration failed: email already registered");
             throw new RuntimeException("Email already registered");
         }
 
@@ -70,15 +74,21 @@ public class AuthService {
                         + verificationLink
                         + "\n\nThank you!"
         );
+        logger.info("Verification email sent successfully");
+
 
         return savedUser;
     }
 
     public String login(LoginRequest request) {
 
+        logger.info("Login attempt received");
+
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() ->
-                        new RuntimeException("Invalid email or password"));
+                .orElseThrow(() -> {
+                    logger.warn("Login failed: invalid credentials");
+                    return new RuntimeException("Invalid email or password");
+                });
 
         boolean passwordMatches = passwordEncoder.matches(
                 request.getPassword(),
@@ -86,33 +96,45 @@ public class AuthService {
         );
 
         if (!passwordMatches) {
+            logger.warn("Login failed: invalid credentials");
             throw new RuntimeException("Invalid email or password");
         }
 
         if (!user.isEmailVerified()) {
+            logger.warn("Login blocked: email not verified");
             throw new EmailNotVerifiedException(
                     "Please verify your email before login"
             );
         }
+
+        logger.info("Login successful");
 
         return jwtService.generateToken(
                 user.getEmail(),
                 user.getRole().name()
         );
     }
+
     public void verifyEmail(String token) {
 
+        logger.info("Email verification initiated");
+
         User user = userRepository.findByVerificationToken(token)
-                .orElseThrow(() ->
-                        new RuntimeException("Invalid verification token"));
+                .orElseThrow(() -> {
+                    logger.warn("Email verification failed: invalid token");
+                    return new RuntimeException("Invalid verification token");
+                });
 
         user.setEmailVerified(true);
         user.setVerificationToken(null);
 
         userRepository.save(user);
-    }
-    public void forgotPassword(String email) {
 
+        logger.info("Email verified successfully");
+    }
+
+    public void forgotPassword(String email) {
+        logger.info("Forgot password request received");
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() ->
                         new RuntimeException("User not found"));
@@ -139,34 +161,34 @@ public class AuthService {
                         + "\n\n"
                         + "This link will expire in 15 minutes."
         );
+        logger.info("Password reset email sent successfully");
     }
-    public void resetPassword(
-            String token,
-            String newPassword) {
+    public void resetPassword(String token, String newPassword) {
 
-        User user = userRepository
-                .findByResetPasswordToken(token)
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Invalid or expired reset token"
-                        ));
+        logger.info("Password reset initiated");
+
+        User user = userRepository.findByResetPasswordToken(token)
+                .orElseThrow(() -> {
+                    logger.warn("Password reset failed: invalid token");
+                    return new RuntimeException(
+                            "Invalid or expired reset token"
+                    );
+                });
 
         if (user.getResetPasswordTokenExpiry() == null ||
                 user.getResetPasswordTokenExpiry()
                         .isBefore(java.time.LocalDateTime.now())) {
 
-            throw new RuntimeException(
-                    "Reset token has expired"
-            );
+            logger.warn("Password reset failed: token expired");
+            throw new RuntimeException("Reset token has expired");
         }
 
-        user.setPassword(
-                passwordEncoder.encode(newPassword)
-        );
-
+        user.setPassword(passwordEncoder.encode(newPassword));
         user.setResetPasswordToken(null);
         user.setResetPasswordTokenExpiry(null);
 
         userRepository.save(user);
+
+        logger.info("Password reset successful");
     }
 }
