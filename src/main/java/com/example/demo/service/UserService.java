@@ -13,6 +13,8 @@ import com.example.demo.repository.PermissionRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.specification.UserSpecification;
 
+import jakarta.transaction.Transactional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -47,9 +49,11 @@ public class UserService {
         this.fileStorageService = fileStorageService;
     }
 
+
     public User createUser(User user) {
         return userRepository.save(user);
     }
+
 
     public List<User> getAllUsers() {
         return userRepository.findAll();
@@ -97,6 +101,7 @@ public class UserService {
         return userRepository.save(existingUser);
     }
 
+
     public void deleteUser(Long id) {
 
         User existingUser = userRepository.findById(id)
@@ -111,14 +116,13 @@ public class UserService {
 
     public User getUserByEmail(String email) {
 
-        User user = userRepository.findByEmail(email)
+        return userRepository.findByEmail(email)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "User not found with email: " + email
                         ));
-
-        return user;
     }
+
 
     public User updateMyProfile(
             String email,
@@ -166,6 +170,7 @@ public class UserService {
     }
 
 
+    @Transactional
     public User assignPermission(
             Long userId,
             Long permissionId) {
@@ -219,6 +224,7 @@ public class UserService {
 
         return userRepository.save(user);
     }
+
 
     public Page<UserResponse> filterUsers(
             UserFilterRequest request,

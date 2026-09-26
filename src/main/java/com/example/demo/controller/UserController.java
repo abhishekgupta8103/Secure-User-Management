@@ -5,7 +5,8 @@ import com.example.demo.entity.Permission;
 import com.example.demo.entity.User;
 import com.example.demo.mapper.UserMapper;
 import com.example.demo.service.UserService;
-
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import jakarta.validation.Valid;
 
 import org.springframework.data.domain.Page;
@@ -219,4 +220,5 @@ public class UserController {
                 userService.filterUsers(request, pageable)
         );
     }
+
 }
