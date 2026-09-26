@@ -107,6 +107,8 @@ public class AuthService {
             );
         }
 
+        logger.info("User role during login: {}", user.getRole().name());
+
         logger.info("Login successful");
 
         return jwtService.generateToken(

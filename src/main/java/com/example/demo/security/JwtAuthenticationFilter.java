@@ -8,10 +8,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
-
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -42,30 +40,46 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = authHeader.substring(7);
 
-        if (jwtService.isTokenValid(token)) {
+        try {
 
-            String email = jwtService.extractEmail(token);
+            if (jwtService.isTokenValid(token)) {
 
-            String role = jwtService.extractRole(token);
+                String email = jwtService.extractEmail(token);
 
-            SimpleGrantedAuthority authority =
-                    new SimpleGrantedAuthority("ROLE_" + role);
+                String role = jwtService.extractRole(token);
 
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            email,
-                            null,
-                            Collections.singletonList(authority)
+                if (email != null
+                        && role != null
+                        && SecurityContextHolder.getContext()
+                        .getAuthentication() == null) {
+
+                    // Remove existing ROLE_ prefix if present
+                    role = role.replaceFirst("^ROLE_", "");
+
+                    SimpleGrantedAuthority authority =
+                            new SimpleGrantedAuthority("ROLE_" + role);
+
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    email,
+                                    null,
+                                    Collections.singletonList(authority)
+                            );
+
+                    authentication.setDetails(
+                            new WebAuthenticationDetailsSource()
+                                    .buildDetails(request)
                     );
 
-            authentication.setDetails(
-                    new WebAuthenticationDetailsSource()
-                            .buildDetails(request)
-            );
+                    SecurityContextHolder.getContext()
+                            .setAuthentication(authentication);
+                }
+            }
 
-            SecurityContextHolder
-                    .getContext()
-                    .setAuthentication(authentication);
+        } catch (Exception e) {
+
+            SecurityContextHolder.clearContext();
+
         }
 
         filterChain.doFilter(request, response);
