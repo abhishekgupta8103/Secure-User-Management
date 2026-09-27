@@ -16,7 +16,13 @@ import java.time.LocalDateTime;
 
 @EntityListeners(AuditingEntityListener.class)
 @Entity
-@Table(name = "users")
+@Table(
+        name = "users",
+        indexes = {
+                @Index(name = "idx_user_verification_token", columnList = "verification_token"),
+                @Index(name = "idx_user_reset_password_token", columnList = "reset_password_token")
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -52,7 +58,10 @@ public class User {
 
     private boolean emailVerified = false;
 
+    @Column(name = "verification_token")
     private String verificationToken;
+
+    @Column(name = "reset_password_token")
     private String resetPasswordToken;
 
     private java.time.LocalDateTime resetPasswordTokenExpiry;
@@ -65,9 +74,14 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(
+            mappedBy = "user",
+            cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY
+    )
     private List<Appointment> appointments;
-    @ManyToMany
+
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "user_permissions",
             joinColumns = @JoinColumn(name = "user_id"),

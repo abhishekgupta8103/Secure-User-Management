@@ -48,12 +48,11 @@ public class UserController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String direction,
             @RequestParam(defaultValue = "") String search) {
-        if (page < 0) {
-            page = 0;
-        }
+        page = Math.max(page, 0);
+        size = Math.max(1, Math.min(size, 100));
 
-        if (size <= 0) {
-            size = 5;
+        if (!Set.of("id", "name", "email", "createdAt").contains(sortBy)) {
+            sortBy = "id";
         }
 
 

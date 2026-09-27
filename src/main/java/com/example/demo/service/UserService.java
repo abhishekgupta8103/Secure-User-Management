@@ -55,11 +55,9 @@ public class UserService {
     }
 
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
-    }
 
     public Page<User> getUsersWithPagination(Pageable pageable) {
+
         return userRepository.findAll(pageable);
     }
 
@@ -195,6 +193,7 @@ public class UserService {
     }
 
 
+    @Transactional
     public Set<Permission> getUserPermissions(Long userId) {
 
         User user = userRepository.findById(userId)
@@ -203,7 +202,7 @@ public class UserService {
                                 "User not found with id: " + userId
                         ));
 
-        return user.getPermissions();
+        return new HashSet<>(user.getPermissions());
     }
     @CacheEvict(value = "dashboardStats", allEntries = true)
     public User uploadProfileImage(
